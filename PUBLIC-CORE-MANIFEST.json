@@ -31,7 +31,7 @@
     },
     {
       "path": "playwright.config.mjs",
-      "sha256": "a16ca4f9c003fd1ee0fea0aece7e56efc2fb2402ac36b98bbac2f77e29b73214"
+      "sha256": "4623e6c64c13e972ad2ad2beb829ddaf7b64ee55e895a854d00529b79929baa5"
     },
     {
       "path": "drizzle.config.ts",
@@ -43,7 +43,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "7947b427a530d1f7c31ab1e73f748a4191eba0a21e838b6c9514ddac316e8fc4"
+      "sha256": "0a49d7259d4009c8c7a8f6c201941897d5a5f40c6eee87072829c99ac4e413b7"
     },
     {
       "path": "src/model.mjs",
@@ -83,7 +83,7 @@
     },
     {
       "path": "tests/editor.spec.mjs",
-      "sha256": "3c166720e78cb5ffddbf93bf2d4a3dba0b09c07bfa71f869db50dae062d0e31f"
+      "sha256": "b233c648e1acaa1d818389bd6a1da73bc140fbe6d4be5a157f8ed71c748beb59"
     },
     {
       "path": "tests/model.test.mjs",

@@ -22,4 +22,13 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
-      # No deployment, secrets, real project data or artifact uploads belong in this workflow.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-browser-evidence
+          path: |
+            test-results/**/*.png
+            test-results/**/*.webm
+          if-no-files-found: warn
+          retention-days: 7
+      # Only synthetic fixture evidence is uploaded. No deployment, secrets or real project data.
