@@ -44,9 +44,9 @@ function recordChange(id,change,transaction=crypto.randomUUID(),fromCanvas=false
  if(!editable())return;const n=project.manifest.find(n=>n.id===id);if(!n)return;
  if('text'in change&&(!n.editable.text||typeof change.text!=='string'||!change.text.length||change.text.length>500||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(change.text)))return;
  if(change.styles&&!validStyles(change.styles))return;
- const before=copy(working);working[id]??={};if('text'in change)working[id].text=change.text;if(change.styles){working[id].responsive??={};working[id].responsive[scopeName()]={...working[id].responsive[scopeName()],...change.styles};}
- if(JSON.stringify(before)===JSON.stringify(working))return;
- const last=undoLocal.at(-1);if(last?.transaction===transaction)last.after=copy(working);else undoLocal.push({before,after:copy(working),transaction});redoLocal=[];saveKey=null;
+ const before=copy(working);working[id]??={};if('text'in change){if(change.text===(project.edits[id]?.text??n.text)&&!('text'in (project.edits[id]||{})))delete working[id].text;else working[id].text=change.text;}if(change.styles){working[id].responsive??={};working[id].responsive[scopeName()]={...working[id].responsive[scopeName()],...change.styles};}
+ if(!Object.keys(working[id]).length)delete working[id];if(JSON.stringify(before)===JSON.stringify(working))return;
+ const last=undoLocal.at(-1);if(last?.transaction===transaction){last.after=copy(working);if(JSON.stringify(last.before)===JSON.stringify(last.after))undoLocal.pop();}else undoLocal.push({before,after:copy(working),transaction});redoLocal=[];saveKey=null;
  if(selected?.id===id){if('text'in change)$('#text-edit').value=change.text;for(const [key,value]of Object.entries(change.styles||{})){const input=$(`[data-prop="${key}"]`);if(input)input.value=value.endsWith('px')?parseFloat(value):value;}}
  if(!fromCanvas)syncCanvas();renderLayers();updateButtons();status(`Sin guardar · ${changesToSave().length} ajustes · Ctrl/Cmd+S para guardar`);
 }

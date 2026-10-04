@@ -1,12 +1,12 @@
 // Runs only inside the opaque, script-restricted preview. It never saves or calls an agent.
 export function canvasBridge(scope, properties, textIds) {
-  const editableText = new Set(textIds), originals = new Map(), allowed = new Set(properties);
+  const editableText = new Set(textIds), originals = new Map(), logicalText = new Map(), allowed = new Set(properties);
   let chosen = null, enabled = false, editing = null, gesture = null, ticking = false;
   const send = (type, data = {}) => parent.postMessage({type, ...scope, ...data}, '*');
   const node = id => /^el-\d+$/.test(id || '') ? document.querySelector(`[data-ve-id="${id}"]`) : null;
   const safeText = text => typeof text === 'string' && text.length > 0 && text.length <= 500 && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(text);
   const validStyle = (key, value) => allowed.has(key) && typeof value === 'string' && (key === 'font-family' ? /^(Anton|Barlow|Barlow Condensed|Arial|Georgia)$/.test(value) : key.includes('color') ? /^#[\da-f]{6}$/i.test(value) : key === 'font-weight' ? /^(400|500|600|700|800|900)$/.test(value) : key === 'line-height' ? /^(1(?:\.\d{1,2})?|2(?:\.0{1,2})?)$/.test(value) : /^\d+(\.\d{1,2})?px$/.test(value) && parseFloat(value) <= (key === 'font-size' ? 220 : key === 'letter-spacing' ? 20 : 160));
-  for (const el of document.querySelectorAll('[data-ve-id]')) originals.set(el.dataset.veId, el.textContent);
+  for (const el of document.querySelectorAll('[data-ve-id]')) { originals.set(el.dataset.veId, el.textContent); logicalText.set(el.dataset.veId, el.textContent.trim()); }
   const overlay = document.createElement('div'); overlay.id = 've-controls'; overlay.hidden = true;
   overlay.innerHTML = '<div class="ve-toolbar" role="toolbar" aria-label="Editar elemento"><button type="button" data-command="edit" title="Editar texto (doble clic o Enter)">Texto</button><button type="button" data-command="left" aria-label="Mover a la izquierda">←</button><button type="button" data-command="up" aria-label="Mover arriba">↑</button><button type="button" data-command="down" aria-label="Mover abajo">↓</button><button type="button" data-command="right" aria-label="Mover a la derecha">→</button><button type="button" data-command="smaller" aria-label="Reducir texto">A−</button><button type="button" data-command="larger" aria-label="Aumentar texto">A+</button></div><button type="button" class="ve-move" data-handle="move" aria-label="Arrastrar para mover dentro del flujo" title="Mover · flechas para ajustar">✥</button><button type="button" class="ve-resize" data-handle="resize" aria-label="Arrastrar para cambiar tamaño de texto" title="Tamaño de texto">↘</button>';
   document.body.append(overlay);
@@ -37,11 +37,11 @@ export function canvasBridge(scope, properties, textIds) {
   function finishText(cancel=false) {
     if(!editing)return;const session=editing;editing=null;const el=node(session.id);el.removeAttribute('contenteditable');el.removeAttribute('role');el.removeAttribute('aria-label');
     const text=el.textContent;
-    if(cancel||!safeText(text)){el.textContent=session.before;send('ve:change',{element_id:session.id,text:session.before,transaction:session.transaction});}
+    if(cancel||!safeText(text)){el.textContent=session.beforeDOM;if(session.changed)send('ve:change',{element_id:session.id,text:session.before,transaction:session.transaction});}else if(session.changed)logicalText.set(session.id,text);
     refresh();
   }
   function startText() {
-    if(!enabled||!editableText.has(chosen))return;finishText();const el=node(chosen);editing={id:chosen,before:el.textContent,transaction:crypto.randomUUID()};
+    if(!enabled||!editableText.has(chosen))return;finishText();const el=node(chosen);editing={id:chosen,before:logicalText.get(chosen),beforeDOM:el.textContent,changed:false,transaction:crypto.randomUUID()};
     el.setAttribute('contenteditable','plaintext-only');el.setAttribute('role','textbox');el.setAttribute('aria-label','Texto del elemento');el.focus();
     const selection=getSelection(),range=document.createRange();range.selectNodeContents(el);selection.removeAllRanges();selection.addRange(range);refresh();
   }
@@ -71,7 +71,7 @@ export function canvasBridge(scope, properties, textIds) {
   overlay.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const command=e.target.closest('[data-command]')?.dataset.command;if(!command)return;if(command==='edit'){startText();return;}finishText();const start=limits(node(chosen));if(command==='smaller'||command==='larger')change({'font-size':px(clamp(start.font+(command==='larger'?2:-2),8,220))});else change(moved(start,command==='left'?-4:command==='right'?4:0,command==='up'?-4:command==='down'?4:0));});
   document.addEventListener('click',e=>{if(overlay.contains(e.target)||editing?.id===e.target.closest('[data-ve-id]')?.dataset.veId)return;e.preventDefault();e.stopPropagation();const el=e.target.closest('[data-ve-id]');if(el)select(el.dataset.veId);},true);
   document.addEventListener('dblclick',e=>{if(overlay.contains(e.target))return;const el=e.target.closest('[data-ve-id]');if(el){select(el.dataset.veId);startText();e.preventDefault();}},true);
-  document.addEventListener('input',e=>{if(editing&&e.target===node(editing.id)){const value=e.target.textContent;if(safeText(value))send('ve:change',{element_id:editing.id,text:value,transaction:editing.transaction});refresh();}});
+  document.addEventListener('input',e=>{if(editing&&e.target===node(editing.id)){const value=e.target.textContent;editing.changed=true;if(safeText(value))send('ve:change',{element_id:editing.id,text:value,transaction:editing.transaction});refresh();}});
   document.addEventListener('beforeinput',e=>{if(editing&&e.inputType==='insertParagraph')e.preventDefault();});
   document.addEventListener('paste',e=>{if(!editing)return;e.preventDefault();const text=e.clipboardData.getData('text/plain').replace(/[\r\n]+/g,' ');const selection=getSelection();if(!selection.rangeCount)return;const range=selection.getRangeAt(0);range.deleteContents();range.insertNode(document.createTextNode(text));selection.collapseToEnd();node(editing.id).dispatchEvent(new Event('input',{bubbles:true}));});
   document.addEventListener('drop',e=>e.preventDefault(),true);
@@ -93,8 +93,8 @@ export function canvasBridge(scope, properties, textIds) {
     if(d.type==='ve:select')select(d.element_id,!!d.scroll);
     if(d.type==='ve:configure'){enabled=d.editable===true;if(!enabled){cancelGesture();finishText();}geometry();}
     if(d.type==='ve:sync'&&d.edits&&typeof d.edits==='object'){
-      cancelGesture();finishText();for(const [id,text]of originals){const el=node(id);el.style.cssText='';if(editableText.has(id))el.textContent=text;}
-      for(const [id,edit]of Object.entries(d.edits)){const el=node(id);if(!el||!edit)continue;if(editableText.has(id)&&safeText(edit.text))el.textContent=edit.text;for(const [p,v]of Object.entries(edit.styles||{}))if(validStyle(p,v))el.style.setProperty(p,v);}
+      cancelGesture();finishText();for(const [id,text]of originals){const el=node(id);el.style.cssText='';if(editableText.has(id)){el.textContent=text;logicalText.set(id,text.trim());}}
+      for(const [id,edit]of Object.entries(d.edits)){const el=node(id);if(!el||!edit)continue;if(editableText.has(id)&&safeText(edit.text)){el.textContent=edit.text;logicalText.set(id,edit.text);}for(const [p,v]of Object.entries(edit.styles||{}))if(validStyle(p,v))el.style.setProperty(p,v);}
       if(chosen)select(chosen);refresh();
     }
   });

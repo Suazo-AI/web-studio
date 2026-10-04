@@ -34,8 +34,8 @@ test('review: comment refresh must not silently rebase stale text edits over uns
 
 import {canvasBridge} from '../src/canvas-bridge.mjs';
 import {PROPERTIES} from '../src/model.mjs';
-function isolatedBridge(){
- const dom=new JSDOM('<!doctype html><body><main><h1 data-ve-id="el-1">Synthetic heading</h1><p data-ve-id="el-2">Second synthetic item</p></main></body>',{url:'https://preview.test',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,posts=[];
+function isolatedBridge(initialText="Synthetic heading"){
+ const dom=new JSDOM('<!doctype html><body><main><h1 data-ve-id="el-1">'+initialText+'</h1><p data-ve-id="el-2">Second synthetic item</p></main></body>',{url:'https://preview.test',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,posts=[];
  w.crypto.randomUUID=()=>crypto.randomUUID();w.ResizeObserver=class{observe(){}};w.HTMLElement.prototype.scrollIntoView=()=>{};w.HTMLElement.prototype.setPointerCapture=()=>{};w.postMessage=data=>posts.push(data);
  const scope={nonce:'review-nonce',project_id:'studio-demo',revision_id:'r0'};
  w.eval(`(${canvasBridge.toString()})(${JSON.stringify(scope)},${JSON.stringify(PROPERTIES)},["el-1","el-2"]);`);
@@ -55,4 +55,20 @@ test('review: inline pasted markup stays literal and cancel restores original te
 });
 test('review: resize handle keyboard arrows change font size rather than position',()=>{
  const ui=isolatedBridge();try{const handle=ui.d.querySelector('[data-handle="resize"]'),n=ui.d.querySelector('[data-ve-id="el-1"]');n.style.fontSize='40px';handle.dispatchEvent(new ui.w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));assert.equal(n.style.fontSize,'41px');assert.equal(n.style.marginTop,'');}finally{ui.dom.window.close();}
+});
+
+test('review: Escape without typing must not emit a whitespace-only source edit',()=>{
+ const ui=isolatedBridge('\n  Synthetic heading\n');try{ui.d.querySelector('[data-command="edit"]').click();ui.posts.length=0;const n=ui.d.querySelector('[data-ve-id="el-1"]');n.dispatchEvent(new ui.w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));assert.equal(n.textContent,'\n  Synthetic heading\n');assert.equal(ui.posts.some(x=>x.type==='ve:change'),false);}finally{ui.dom.window.close();}
+});
+test('review: multistep local undo/redo restores responsive branches without server writes',async()=>{
+ const api=backend(),ui=await open(api);try{click(ui,`[data-id="${leaf.id}"]`);input(ui,'#text-edit','LOCAL TRANSACTION');input(ui,'[data-prop="font-size"]','76');click(ui,'[data-width="390"]');await until(()=>ui.d.querySelector('#style-scope').textContent.startsWith('Móvil'));input(ui,'[data-prop="font-size"]','32');const final=JSON.stringify(ui.w.reviewGetChanges());assert.equal(ui.w.reviewGetChanges().length,3);for(const count of [2,1,0]){click(ui,'#undo');await until(()=>ui.w.reviewGetChanges().length===count);}for(const count of [1,2,3]){click(ui,'#redo');await until(()=>ui.w.reviewGetChanges().length===count);}assert.equal(JSON.stringify(ui.w.reviewGetChanges()),final);const p=await(await api.fetch('/api/project')).json();assert.equal(p.head,'r0');assert.equal(p.history.length,1);assert.deepEqual(p.edits,{});}finally{ui.dom.window.close();}
+});
+test('review: no-op Enter then typed cancellation retains canonical text and exact source whitespace',()=>{
+ const ui=isolatedBridge('\n  Synthetic heading\n');try{const n=ui.d.querySelector('[data-ve-id="el-1"]');ui.d.querySelector('[data-command="edit"]').click();n.dispatchEvent(new ui.w.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));ui.d.querySelector('[data-command="edit"]').click();n.textContent='TEMPORARY';n.dispatchEvent(new ui.w.Event('input',{bubbles:true}));n.dispatchEvent(new ui.w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));const changes=ui.posts.filter(p=>p.type==='ve:change');assert.equal(changes.at(-1).text,'Synthetic heading');assert.equal(changes[0].transaction,changes.at(-1).transaction);assert.equal(n.textContent,'\n  Synthetic heading\n');}finally{ui.dom.window.close();}
+});
+test('review: typed cancellation preserves exact intentionally saved whitespace',()=>{
+ const ui=isolatedBridge();try{const saved='  SAVED TEXT  ',n=ui.d.querySelector('[data-ve-id="el-1"]');ui.message({type:'ve:sync',edits:{'el-1':{text:saved}}});ui.d.querySelector('[data-command="edit"]').click();n.textContent='TEMPORARY';n.dispatchEvent(new ui.w.Event('input',{bubbles:true}));n.dispatchEvent(new ui.w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));assert.equal(ui.posts.filter(p=>p.type==='ve:change').at(-1).text,saved);assert.equal(n.textContent,saved);}finally{ui.dom.window.close();}
+});
+test('review: canceled inline transaction leaves no dirty changes or local undo record',async()=>{
+ const api=backend(),ui=await open(api);try{click(ui,`[data-id="${leaf.id}"]`);bridgeReady(ui);const frame=ui.d.querySelector('#preview'),url=new URL(frame.src),scope={project_id:bundle.project.id,revision_id:url.searchParams.get('revision'),nonce:url.searchParams.get('nonce')};for(const text of ['TEMPORARY','MAKE ROOM.'])ui.w.dispatchEvent(new ui.w.MessageEvent('message',{origin:'null',source:frame.contentWindow,data:{...scope,type:'ve:change',element_id:leaf.id,text,transaction:'one-canceled-text-session'}}));assert.equal(ui.w.reviewGetChanges().length,0);assert.equal(ui.d.querySelector('#save').disabled,true);assert.equal(ui.d.querySelector('#undo').disabled,true);const p=await(await api.fetch('/api/project')).json();assert.equal(p.head,'r0');}finally{ui.dom.window.close();}
 });

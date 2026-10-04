@@ -47,7 +47,7 @@
     },
     {
       "path": "src/canvas-bridge.mjs",
-      "sha256": "493da52772bbe63b91da00758f288187579a65c467d1d62d89b411263c3e8d8a"
+      "sha256": "cb5b271b8b637f3e02179c7b62f4b24503e5fe5a45791ef8c3e479090666107f"
     },
     {
       "path": "src/model.mjs",
@@ -79,7 +79,7 @@
     },
     {
       "path": "ui/editor.js",
-      "sha256": "99c36e7b238f7347dfc0aa1269ca491664df92466856f3e033a66489b1df34ce"
+      "sha256": "59dfdd0f70088a8beac5efedc5a80c2fc9ed886722cb6f275859a347ad28d67f"
     },
     {
       "path": "ui/index.html",
@@ -87,7 +87,7 @@
     },
     {
       "path": "tests/editor.spec.mjs",
-      "sha256": "be11b7916637dd505d2a185f7c921ce6253df7d01c3dd880b0ce4e9cbde2d326"
+      "sha256": "9199aca72c7201f5344b3932a1b7b03aab46b5e6bdcd7ada641af230a9010f1e"
     },
     {
       "path": "tests/model.test.mjs",
@@ -95,7 +95,7 @@
     },
     {
       "path": "tests/review-direct.test.mjs",
-      "sha256": "286f4a7b0e218e0793e1f3194c88de4af43c2d6e7f5c88e674ac2b81d3c155f9"
+      "sha256": "056bb245dacef6a1a72b8aa4b8e89e1bb55b12a4eba3add5ecebd5d91546364d"
     },
     {
       "path": "tests/ui.test.mjs",
