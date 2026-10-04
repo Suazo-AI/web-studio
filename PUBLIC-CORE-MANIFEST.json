@@ -23,11 +23,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "d38d60b36a5b382e2836277e88148a3dd7a58ce6a5abd0afe80d5b3a71588207"
+      "sha256": "3f36611607e6ea4495aedefb9361eded8ab3b48dfff5b30e460669b2df85eda9"
     },
     {
       "path": "package-lock.json",
-      "sha256": "8bb2f8a72d4436ab301294f81c9e8a2fe035684e83bfd82653375ec6b6dc414b"
+      "sha256": "92bff38875558f8ed840675fe2e34b1161a9e558d234cfed1d4f938201b9f512"
     },
     {
       "path": "playwright.config.mjs",
@@ -47,7 +47,7 @@
     },
     {
       "path": "src/model.mjs",
-      "sha256": "e157ffae300c1ce77ee92c2cde2eb368bf0a2ae0334184f69e7447f588eb20eb"
+      "sha256": "5ce27b36d4e86ee55a5daa7209f6f0f7aa2a4be693405593ed0163503f555a8a"
     },
     {
       "path": "src/preview.mjs",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/service.mjs",
-      "sha256": "8b827256c37a99ba2cefd1e6aeced4a395bbc4fdd62c63bbfa9f6cbd58ef6afc"
+      "sha256": "ffed6bb9e2e18d288f6205f12911fc6842cd8d3ec677acda19919b2c591114d3"
     },
     {
       "path": "src/storage.mjs",
@@ -75,7 +75,7 @@
     },
     {
       "path": "ui/editor.js",
-      "sha256": "44d518a7c3409eb16d6ab78cca7172524c7ca710893bd02e9ef6ea4e3aeb491d"
+      "sha256": "adf0a8fe1de2714295f10c34af15f419b60090a26a6cf74df6699a2520d63d35"
     },
     {
       "path": "ui/index.html",
@@ -83,15 +83,15 @@
     },
     {
       "path": "tests/editor.spec.mjs",
-      "sha256": "b233c648e1acaa1d818389bd6a1da73bc140fbe6d4be5a157f8ed71c748beb59"
+      "sha256": "eb341013fa6e376f4ece60820ca83fb0da6025e96b5312882342ab4ccc7afd92"
     },
     {
       "path": "tests/model.test.mjs",
-      "sha256": "8478813211d4d31b7f08b53ff5abb207188c92555453aaed1fc768ac3d67ee80"
+      "sha256": "35d4f3b0a31ab2143a878d9686cb9c44a1635ca2a8c409b8611986ab317cfdc6"
     },
     {
       "path": "tests/ui.test.mjs",
-      "sha256": "ee5fe1341f01261760329a432a29110ce2e98d8925797bda0eb6486d9a11f6ff"
+      "sha256": "b8db88a9169b9632ee511c4684f6d99bc3a3f2b2c820ecb77c071188b0cf0e02"
     },
     {
       "path": "db/schema.ts",
