@@ -79,7 +79,7 @@
     },
     {
       "path": "ui/index.html",
-      "sha256": "76cfdea32a443df702196759f57953131ee1200f052a45908458eb2b96a0a196"
+      "sha256": "e11f513814e5acb27374c5a8e0ab18831c9823a4fd9184bee2f800619ae2d340"
     },
     {
       "path": "tests/editor.spec.mjs",
