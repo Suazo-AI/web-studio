@@ -86,3 +86,8 @@ fingerprint must match; the old project and revisions are never rewritten. See
 `SPEC-V2.md` for acceptance criteria and limits. Private production migration is a
 separate reviewed action. Font catalog/studio, image providers and custom-domain
 setup are separate modules and are not activated by this milestone.
+
+Arrow keys reorder selected flow siblings; in an explicitly free-positioned layer,
+they nudge 1px (Shift: 10px). Existing absolute/fixed source CSS requires an explicit
+layout choice before direct movement, avoiding an implicit change of containing
+block. The inspector shows measured source typography until an override is chosen.

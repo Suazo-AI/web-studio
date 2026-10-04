@@ -11,7 +11,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "3e30590133c42a950f0ae6d6f40c35d227cd709c4873ef935d75e16e83a799b4"
+      "sha256": "14393d8e52773c73d18f30dbb7dec256e92892b65b60db7893c1c779d8fa2704"
     },
     {
       "path": "SPEC.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "SPEC-V2.md",
-      "sha256": "a7df38e3fbc69669e4741caa8954f6e203943b312f88b0643846c05022b5f15b"
+      "sha256": "c82e2cb3d79b945879308ffcc592854ab28afdcc7fb4c8c8bb38c8aef34966ce"
     },
     {
       "path": ".gitignore",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/v2-canvas-bridge.mjs",
-      "sha256": "a85918ed4a3ad199a10f36898c40f71c7410f7e6478b58157b87cb746a69986a"
+      "sha256": "83c99750c590a1592159d9a92333acd9bdd7b69f438828a3e5e7b20b9722d1be"
     },
     {
       "path": "src/v2-mcp.mjs",
@@ -87,7 +87,7 @@
     },
     {
       "path": "src/v2-preview.mjs",
-      "sha256": "ba86ec1e6261b73d4919d0b651a76d78b10761532d24fb52218d222a647635e8"
+      "sha256": "aeab3dc34345480c6d927657704be2e4efddf4b95c6119318864c6a084d4016e"
     },
     {
       "path": "src/v2-service.mjs",
@@ -115,11 +115,11 @@
     },
     {
       "path": "ui/v2.html",
-      "sha256": "7967fdd15bb8dd9631de778cacdf6a30d73fba1fd39954e07a364ffaa1240c2c"
+      "sha256": "2741ffbeeb868945e0c946bb70a000a5cfb0c9df6852d77e9081cd61c014034f"
     },
     {
       "path": "ui/v2.js",
-      "sha256": "cbfda4ccbe0c34f11811ac4c77374a70887eb48f5f2798406dcce98d99d2648d"
+      "sha256": "a50d18f674d7277c8ad66aae4d8f6048da096d1c8194df517910141bba2ecd40"
     },
     {
       "path": "tests/editor.spec.mjs",
@@ -139,7 +139,7 @@
     },
     {
       "path": "tests/v2-editor.spec.mjs",
-      "sha256": "5c89076daa55b3946a803434c2e5dc6becc7f0b3bceb69ac203f112514e6432e"
+      "sha256": "d27983a2958b0c15a209254301a6fe3fabc92a5a0f0f9484cb75b7ce61115d0e"
     },
     {
       "path": "tests/v2-model.test.mjs",
@@ -147,7 +147,7 @@
     },
     {
       "path": "tests/v2-review.test.mjs",
-      "sha256": "f269fc91871f8f3f727d38ad52b90144dab0846fba0c6c7e7390dd14bcab1c7c"
+      "sha256": "f2592b109e3f4c4a95c122717e7b1365504218aca3b16a819a257b61e9a81b1a"
     },
     {
       "path": "tests/v2-service.test.mjs",

@@ -22,10 +22,10 @@ async function openUI(overrides={}){
  const message=(data,nonce=w.review.nonce)=>w.dispatchEvent(new w.MessageEvent('message',{source:d.querySelector('#canvas').contentWindow,data:w.JSON.parse(JSON.stringify({project_id:state.project.id,nonce,...data}))}));
  return {dom,w,d,message,select:text=>w.review.select(w.review.doc.nodes.find(n=>n.text===text).id)};
 }
-function bridge(){
+function bridge(options={}){
  const dom=new JSDOM('<!doctype html><body><main data-v2-id="v2-main"><p data-v2-id="v2-b">B</p><p data-v2-id="v2-a">A</p><p data-v2-id="v2-c">C</p></main></body>',{runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,posts=[];
  w.postMessage=x=>posts.push(x);w.scrollTo=()=>{};
- const scope={nonce:'synthetic-review',project_id:'synthetic-review',viewport:'desktop',nodes:[{id:'v2-main',parentId:null,children:['v2-b','v2-a','v2-c'],editable:{text:false},layout:{mode:'flow'}},...['a','b','c'].map(id=>({id:'v2-'+id,parentId:'v2-main',children:[],editable:{text:true},layout:{mode:'flow'},text:id.toUpperCase()}))]};
+ const scope={nonce:'synthetic-review',project_id:'synthetic-review',viewport:'desktop',nodes:[{id:'v2-main',parentId:null,children:['v2-b','v2-a','v2-c'],editable:{text:false},layout:{mode:'flow'}},...['a','b','c'].map(id=>({id:'v2-'+id,parentId:'v2-main',children:[],editable:{text:true},layout:Object.hasOwn(options,'layout')?options.layout:{mode:'flow'},text:id.toUpperCase()}))]};
  w.eval(`(${v2CanvasBridge.toString()})(${JSON.stringify(scope)})`);
  return {dom,w,d:w.document,posts};
 }
@@ -82,5 +82,25 @@ test('V2 review: edits during saved Undo cannot disappear from the pending view'
   const response=JSON.parse(JSON.stringify(ui.w.review.data));response.head='v2-r2';response.canUndo=false;response.canRedo=true;
   resolveUndo({ok:true,json:async()=>ui.w.JSON.parse(JSON.stringify(response))});await new Promise(resolve=>setTimeout(resolve,30));
   if(ui.w.review.pending.length)assert.equal(ui.w.review.doc.nodes.find(n=>n.id===id).text,'LOCAL DURING UNDO','Pending operations must be visible after history responses');
+ }finally{ui.dom.window.close();}
+});
+test('V2 review: inherited absolute and fixed positions cannot silently convert on drag',()=>{
+ for(const position of ['absolute','fixed']){const ui=bridge({layout:null});try{const el=ui.d.querySelector('[data-v2-id="v2-a"]');el.style.cssText=`position:${position};left:100px;top:20px`;const before=el.style.cssText;
+   for(const [type,y]of [['pointerdown',20],['pointermove',40],['pointerup',40]])pointer(ui,el,type,y);
+   assert.equal(ui.posts.some(p=>p.type==='v2:operation'),false,position);assert.ok(ui.posts.some(p=>p.type==='v2:blocked'));assert.equal(el.style.cssText,before);
+  }finally{ui.dom.window.close();}}
+ const authored=bridge({layout:{mode:'free',x:100,y:20}});try{const el=authored.d.querySelector('[data-v2-id="v2-a"]');el.style.cssText='position:absolute;left:100px;top:20px';
+  for(const [type,y]of [['pointerdown',20],['pointermove',40],['pointerup',40]])pointer(authored,el,type,y);
+  assert.equal(authored.posts.find(p=>p.type==='v2:operation')?.operation.y,40);assert.equal(authored.posts.some(p=>p.type==='v2:blocked'),false);
+ }finally{authored.dom.window.close();}
+});
+test('V2 review: source-position inspector and keyboard nudge require explicit layout choice',async()=>{
+ const ui=await openUI();try{ui.select('A');const id=ui.w.review.selected;
+  for(const position of ['absolute','fixed']){ui.message({type:'v2:select',id,computed:{position,left:'100px',top:'20px',fontFamily:'Arial',fontSize:'18px',color:'rgb(1, 2, 3)'}});
+   assert.equal(ui.d.querySelector('#layout').value,'source');assert.equal(ui.d.querySelector('#coords').hidden,true);assert.equal(ui.d.querySelector('#font').value,'Arial');assert.equal(ui.d.querySelector('#size').value,'18');assert.equal(ui.d.querySelector('#color').value,'#010203');
+   ui.d.body.dispatchEvent(new ui.w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));assert.equal(ui.w.review.pending.length,0);assert.match(ui.d.querySelector('#status').textContent,/Elegí Libre/);
+  }
+  const layout=ui.d.querySelector('#layout');layout.value='free';layout.dispatchEvent(new ui.w.Event('change',{bubbles:true}));assert.equal(ui.w.review.pending.length,1);
+  ui.d.body.dispatchEvent(new ui.w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));assert.equal(ui.w.review.pending.length,2);assert.equal(ui.w.review.doc.nodes.find(n=>n.id===id).responsiveLayout.desktop.y,21);
  }finally{ui.dom.window.close();}
 });

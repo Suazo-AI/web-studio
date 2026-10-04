@@ -18,3 +18,7 @@ V2 runs at `/v2` alongside unchanged V1 `/`. It uses a separate `:editor-v2` sto
 ## Scope and limits
 
 This milestone is a bounded HTML/CSS editor, not complete Figma parity. Unsupported active widgets remain outside the selectable graph. Arbitrary CSS, external imports, runtime URL fetching, generated fonts/images, domain management and publishing are future modules. Free-position desktop layouts need mobile review before export. The baseline source's own CSS continues to govern flow.
+
+Source absolute/fixed positioning is displayed as inherited source positioning.
+It is not silently converted to V2 coordinates: the user must explicitly choose
+Flow or Free first, because a new parent-relative containing block can change layout.
