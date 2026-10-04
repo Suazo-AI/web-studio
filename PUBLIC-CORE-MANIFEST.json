@@ -79,7 +79,7 @@
     },
     {
       "path": "ui/editor.js",
-      "sha256": "59dfdd0f70088a8beac5efedc5a80c2fc9ed886722cb6f275859a347ad28d67f"
+      "sha256": "1ed0eeea2251491eaed7a9acc50b9a27f99ce98c8e0e303006a555edc21e7e04"
     },
     {
       "path": "ui/index.html",
@@ -87,7 +87,7 @@
     },
     {
       "path": "tests/editor.spec.mjs",
-      "sha256": "9199aca72c7201f5344b3932a1b7b03aab46b5e6bdcd7ada641af230a9010f1e"
+      "sha256": "67830af2fe07a2c7f53b3fbc4b304d2ddbc4ec1d6ee13edfc7c51af7a7f3bce9"
     },
     {
       "path": "tests/model.test.mjs",
