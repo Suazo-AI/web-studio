@@ -1,5 +1,6 @@
 import { parse, serialize } from 'parse5';
 import { materialize, walk, PROPERTIES } from './model.mjs';
+import { canvasBridge } from './canvas-bridge.mjs';
 const esc=value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
 export function previewHTML(snapshot,manifest,edits,assets,scope){
   const files=materialize(snapshot,manifest,edits); const doc=parse(files['src/index.html']);
@@ -20,9 +21,10 @@ export function previewHTML(snapshot,manifest,edits,assets,scope){
   }
   clean(doc);
   let css=files['src/styles.css'].replace(/url\(['"]?(.*?)['"]?\)/g,(_m,path)=>`url("${assets[path.replace(/^\.\//,'')]?.data||''}")`);
-  // Preview-only outline; source exports contain no editor bridge or control overrides.
-  css+='\n[data-ve-id]{cursor:crosshair}[data-ve-selected]{outline:2px solid #68ecc5!important;outline-offset:-2px}html{scroll-behavior:auto}button,input,select{pointer-events:none}';
-  const bridge=`(()=>{const scope=${JSON.stringify(scope)};const allowed=${JSON.stringify(PROPERTIES)};let chosen=null;function select(id,scroll=false){const el=document.querySelector('[data-ve-id="'+id+'"]');if(!el)return;document.querySelector('[data-ve-selected]')?.removeAttribute('data-ve-selected');el.setAttribute('data-ve-selected','');chosen=id;if(scroll)el.scrollIntoView({block:'center'});const cs=getComputedStyle(el),r=el.getBoundingClientRect(),styles={};for(const p of allowed)styles[p]=cs.getPropertyValue(p);parent.postMessage({type:'ve:selected',...scope,element_id:id,styles,geometry:{x:r.x,y:r.y,width:r.width,height:r.height}},'*');}document.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const el=e.target.closest('[data-ve-id]');if(el)select(el.dataset.veId);},true);document.addEventListener('submit',e=>e.preventDefault(),true);addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='ve:select'||e.data?.nonce!==scope.nonce||e.data?.revision_id!==scope.revision_id||e.data?.project_id!==scope.project_id)return;if(/^el-\\d+$/.test(e.data.element_id))select(e.data.element_id,!!e.data.scroll);});parent.postMessage({type:'ve:ready',...scope},'*');})();`;
+  // The preview bridge and its controls are never included in exported source.
+  css+=`\n[data-ve-id]{cursor:crosshair}[data-ve-selected]{outline:2px solid #68ecc5!important;outline-offset:-2px;cursor:grab}[contenteditable]{cursor:text;touch-action:auto;outline:2px solid #68ecc5!important}html{scroll-behavior:auto}button,input,select{pointer-events:none}
+#ve-controls{position:fixed;z-index:2147483647;border:2px solid #68ecc5;pointer-events:none;box-sizing:border-box}#ve-controls[hidden]{display:none}#ve-controls button{all:initial;box-sizing:border-box;font:12px Arial;color:#14271f;background:#b9eed7;border:1px solid #315f4a;cursor:pointer;pointer-events:auto;text-align:center;touch-action:none;min-width:28px;height:28px;line-height:26px}#ve-controls button:focus-visible{outline:3px solid #fff;outline-offset:2px}#ve-controls button[hidden]{display:none}#ve-controls .ve-toolbar{position:absolute;left:0;bottom:100%;display:flex;white-space:nowrap;max-width:calc(100vw - 12px)}#ve-controls.ve-near-top .ve-toolbar{bottom:auto;top:100%}#ve-controls .ve-move{position:absolute;left:50%;top:100%;margin-left:-14px;cursor:move}#ve-controls .ve-resize{position:absolute;right:-9px;bottom:-9px;width:24px;min-width:24px;height:24px;line-height:22px;cursor:nwse-resize}`;
+  const bridge=`(${canvasBridge.toString()})(${JSON.stringify(scope)},${JSON.stringify(PROPERTIES)},${JSON.stringify(manifest.filter(n=>n.editable.text).map(n=>n.id))});`;
   const csp=`default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; script-src 'nonce-${scope.nonce}'; connect-src 'none'; form-action 'none'; base-uri 'none'`;
   return serialize(doc).replace('</head>',`<meta http-equiv="Content-Security-Policy" content="${esc(csp)}"><style>${css.replace(/<\/style/gi,'<\\/style')}</style></head>`).replace('</body>',`<script nonce="${esc(scope.nonce)}">${bridge}</script></body>`);
 }

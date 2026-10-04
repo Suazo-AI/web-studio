@@ -36,11 +36,11 @@ export function createWorker(bundle){
       const origin=request.headers.get('origin');if(origin&&origin!==url.origin)fail('ORIGIN_FORBIDDEN','Origen no permitido',403);
       const service=makeService({...bundle,store:new D1Store(env.DB)});
       if(path==='/mcp'){
-        let result;try{result=await service.invoke(body.params?.name,body.params?.arguments??{},user,url.origin);}catch(error){if(!(error instanceof EditorError))throw error;return json({jsonrpc:'2.0',id:body.id??null,result:{content:[{type:'text',text:JSON.stringify({code:error.code,message:error.message})}],isError:true}});}
+        let result;try{result=await service.invoke(body.params?.name,body.params?.arguments??{},user,url.origin,{transport:'mcp'});}catch(error){if(!(error instanceof EditorError))throw error;return json({jsonrpc:'2.0',id:body.id??null,result:{content:[{type:'text',text:JSON.stringify({code:error.code,message:error.message})}],isError:true}});}
         return json({jsonrpc:'2.0',id:body.id??null,result:{content:[{type:'text',text:JSON.stringify(result)}],structuredContent:result,isError:false}});
       }
       if(path==='/api/project'&&request.method==='GET')return json(await service.invoke('project',{project_id:PROJECT_ID},user,url.origin));
-      if(path==='/api/action'&&request.method==='POST'){if(!body||typeof body!=='object'||Array.isArray(body)||typeof body.action!=='string'||(body.args!==undefined&&(!body.args||typeof body.args!=='object'||Array.isArray(body.args))))fail('INVALID_ARGUMENTS','Solicitud inválida');return json(await service.invoke(body.action,{project_id:PROJECT_ID,...body.args},user,url.origin));}
+      if(path==='/api/action'&&request.method==='POST'){if(!body||typeof body!=='object'||Array.isArray(body)||typeof body.action!=='string'||(body.args!==undefined&&(!body.args||typeof body.args!=='object'||Array.isArray(body.args))))fail('INVALID_ARGUMENTS','Solicitud inválida');return json(await service.invoke(body.action,{project_id:PROJECT_ID,...body.args},user,url.origin,{transport:'ui'}));}
       if(path==='/preview'&&request.method==='GET'){
         const nonce=url.searchParams.get('nonce');if(!/^[a-f0-9-]{36}$/.test(nonce||''))fail('INVALID_NONCE','Vista inválida');
         const rev=await service.getRevision(user,url.searchParams.get('revision'));

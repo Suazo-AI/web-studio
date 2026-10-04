@@ -18,3 +18,6 @@ Taste decisions are explicitly project-scoped. Experiments and proposals cannot 
 ## Privacy split
 Public: generic engine, editor UI, MCP adapters, tests, synthetic example, blank taste template.
 Private: real source, images, source provenance, taste, comments, revisions, generated bundles and screenshots. Never copy private data into public history or CI output. Public-core export uses an explicit allowlist and data-leak checks, not `.gitignore` alone.
+
+## Direct canvas transactions
+The sandbox bridge emits bounded plain-text/style operations after user interaction, checked again by the parent and server. No source HTML is accepted. Gesture changes commit locally at pointer-up and cancel on pointercancel/Escape. Unsaved actions span selections and have multi-step undo/redo. Save sends one atomic expected-revision batch directly from the UI; no proposal or agent application step is required. The UI-only action is rejected over MCP. Responsive overrides use fixed media queries; text is global. Saved revisions retain exact file hashes and structured before/after changes, available via read-only cursor-based agent tools. Older immutable revisions remain compatible. Live-site integration is still separate.
