@@ -1,0 +1,181 @@
+{
+  "purpose": "Clean generic core candidate for human privacy/license review; not publication authorization",
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "9732d1acfeaea7916d0cc993f9522f9a0774e1104d95fc48f59ea893de828f59"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "dd284e60bfea605d5588558968a2f8c688be6fb95c81e6df939f8760c5a90e08"
+    },
+    {
+      "path": "README.md",
+      "sha256": "06782c87aa7125155e3a09cbd1d932b0fbd0503d78e67fc24020c5f5b26d989e"
+    },
+    {
+      "path": "SPEC.md",
+      "sha256": "363e941eeb8f1eb1e0145c973a2437ea3e47cac55f7ed53a85290f651aa1daa8"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "22c4d7f91a23ad48d65309b20dc7888e230ee9a6cfa3c737dfc3d91f3b285638"
+    },
+    {
+      "path": "package.json",
+      "sha256": "d38d60b36a5b382e2836277e88148a3dd7a58ce6a5abd0afe80d5b3a71588207"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "8bb2f8a72d4436ab301294f81c9e8a2fe035684e83bfd82653375ec6b6dc414b"
+    },
+    {
+      "path": "playwright.config.mjs",
+      "sha256": "a16ca4f9c003fd1ee0fea0aece7e56efc2fb2402ac36b98bbac2f77e29b73214"
+    },
+    {
+      "path": "drizzle.config.ts",
+      "sha256": "b6de759d3b6a3167d22714fdc6b819a075d5b7737a41af589b26a072bed055c4"
+    },
+    {
+      "path": ".openai/hosting.json",
+      "sha256": "c23a20dffb6d89a211621d9ce2fd90868f7538f0e8b4d35141767d4603cc58cb"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "7947b427a530d1f7c31ab1e73f748a4191eba0a21e838b6c9514ddac316e8fc4"
+    },
+    {
+      "path": "src/model.mjs",
+      "sha256": "e157ffae300c1ce77ee92c2cde2eb368bf0a2ae0334184f69e7447f588eb20eb"
+    },
+    {
+      "path": "src/preview.mjs",
+      "sha256": "52c0cfb32ea9ca1564c0143ebbdb7ff0fbd9fc1a2592df76449df20e4b78796b"
+    },
+    {
+      "path": "src/service.mjs",
+      "sha256": "8b827256c37a99ba2cefd1e6aeced4a395bbc4fdd62c63bbfa9f6cbd58ef6afc"
+    },
+    {
+      "path": "src/storage.mjs",
+      "sha256": "3dad0a21ec61e1409a29b3f5284703f7fb972923c43ee24e5bb670966d3a1f60"
+    },
+    {
+      "path": "src/taste.mjs",
+      "sha256": "eb92d6350b060cedb9065af1dc83eeb9f208d1559ee1749c543e582095e1852f"
+    },
+    {
+      "path": "src/worker.mjs",
+      "sha256": "c79c3af89aba01d81a8266eff3002aabfe4345cd73107d7386aaf2375962f4fa"
+    },
+    {
+      "path": "ui/editor.css",
+      "sha256": "cbadf2849db607390e25a4c760015aa53c8650b9f05d00b00cba3752401cbcc5"
+    },
+    {
+      "path": "ui/editor.js",
+      "sha256": "44d518a7c3409eb16d6ab78cca7172524c7ca710893bd02e9ef6ea4e3aeb491d"
+    },
+    {
+      "path": "ui/index.html",
+      "sha256": "76cfdea32a443df702196759f57953131ee1200f052a45908458eb2b96a0a196"
+    },
+    {
+      "path": "tests/editor.spec.mjs",
+      "sha256": "3c166720e78cb5ffddbf93bf2d4a3dba0b09c07bfa71f869db50dae062d0e31f"
+    },
+    {
+      "path": "tests/model.test.mjs",
+      "sha256": "8478813211d4d31b7f08b53ff5abb207188c92555453aaed1fc768ac3d67ee80"
+    },
+    {
+      "path": "tests/ui.test.mjs",
+      "sha256": "ee5fe1341f01261760329a432a29110ce2e98d8925797bda0eb6486d9a11f6ff"
+    },
+    {
+      "path": "db/schema.ts",
+      "sha256": "3f75d657f4c2300e510cfab639a7241bc6bb818b2b9a0292c9e85ada92f443ab"
+    },
+    {
+      "path": "drizzle/0000_small_sauron.sql",
+      "sha256": "2b528abf86f312def1bcad331984ff163fcaf03781bd3da9259187136eb5394f"
+    },
+    {
+      "path": "drizzle/meta/0000_snapshot.json",
+      "sha256": "0845ea402c1389760fa000d70ee77e00f055cd990ace39fa2117cf3378a59602"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "695eb6dae2196ed86727323e00d911015aa793d2ab42d9ee725289c71bbeff17"
+    },
+    {
+      "path": "examples/web-taste.template.md",
+      "sha256": "fc972019e9ed6255f4d7b56bdabb5ba0b18f1be4dd4a0ff314322ea66822429e"
+    },
+    {
+      "path": "examples/studio-demo/project.json",
+      "sha256": "5dd676c2bb34a0e0f0ea165f25653c2499b95925ce4925ad7103ab091cb1f15f"
+    },
+    {
+      "path": "examples/studio-demo/snapshot/manifest.json",
+      "sha256": "304860fd1bedeaa06be0ead44ee4d05860be3ca8b1f39efe00ba17240007123d"
+    },
+    {
+      "path": "examples/studio-demo/snapshot/src/index.html",
+      "sha256": "db8d80a37df646d71b068182c7676a92d98ec04b24315002a545b21fdd911652"
+    },
+    {
+      "path": "examples/studio-demo/snapshot/src/styles.css",
+      "sha256": "05f51da138526e32fa7585981415d5ff330e93fc1daaf602e107bf51d99df6cc"
+    },
+    {
+      "path": "scripts/build.mjs",
+      "sha256": "f8e680552b752c08a20634c2a4dfeaac973a721c516f68372c668861bf25338d"
+    },
+    {
+      "path": "scripts/dev.mjs",
+      "sha256": "f26d428f2996667068c42f7447d4af5dbb9d46420be19d2a79e8ed8d6d280f1b"
+    },
+    {
+      "path": "scripts/export-core.mjs",
+      "sha256": "f08ca4b5f12fde4bc57c38ca0f56b067e23edfd4ab4746689fea3fab40387edf"
+    },
+    {
+      "path": "scripts/freeze.mjs",
+      "sha256": "e3d63f62f31aa9da3616b859b44f2ee7cbe2e2f23da9f4557a0781b1d7e406b9"
+    },
+    {
+      "path": "docs/COMMIT",
+      "sha256": "5c294500745953d3a86c50e40564c45e07d30fb134237dea3c2f2462be010bbd"
+    },
+    {
+      "path": "docs/DEPLOYMENT.md",
+      "sha256": "d90c74ff1fba8cda2a2c3f9658f06583581b667cdd487dd9cd34a1d2b3c2b188"
+    },
+    {
+      "path": "docs/LICENSE",
+      "sha256": "945016bd37e1ba7211622ef60ee1d23ab727896ba7710edd21e8fbe983863969"
+    },
+    {
+      "path": "docs/LICENSE-STATUS.md",
+      "sha256": "a5c77824211bbe8d63a708c88dbb1065e6e7a7e2ffab5f750b26cfa9fda6c367"
+    },
+    {
+      "path": "docs/THIRD-PARTY-NOTICES.md",
+      "sha256": "882673c8dec1bd8ad6ab936a08e83eb0ed86cba7c79780ab9cfb055dae67aeef"
+    },
+    {
+      "path": "docs/WEB-CONTENT-CHECKLIST.md",
+      "sha256": "0ecf2825677854a81ed0ac9e6fa26ba687ac9613ab1905c3744f066ec381a938"
+    },
+    {
+      "path": "docs/upstream-SKILL.md",
+      "sha256": "00ea380ff3e993d58029e4467901333138726f734755e0eef254de2fe4c2f1ef"
+    },
+    {
+      "path": "docs/upstream-plugin.json",
+      "sha256": "744b8bb95fd3ad0eb228652178eaf0dd3373412604bd0b61db8b99b7a585b204"
+    }
+  ]
+}

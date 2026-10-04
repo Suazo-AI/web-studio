@@ -1,0 +1,64 @@
+import { PROPERTIES, fail, clone, revision, checkRevision, mergeChanges, materialize, diffSummary, commitRevision } from './model.mjs';
+import { tasteMarkdown } from './taste.mjs';
+export const tools = [
+ ['list_projects','Lista los proyectos de borrador accesibles. No expone sitios ajenos.',{}],
+ ['open_review','Abre la revisión visual de una copia congelada; no modifica la web publicada.',{project_id:'string',page_id:'string',revision_id:'string?'}],
+ ['inspect_page','Árbol acotado y correspondencia con el código de la página. La geometría exacta se mide en la vista visual.',{project_id:'string',page_id:'string',revision_id:'string',viewport:'string?'}],
+ ['get_element','Texto y propiedades editables de un elemento del borrador.',{project_id:'string',revision_id:'string',element_id:'string'}],
+ ['propose_changes','Crea una propuesta revisable; no guarda ni publica la web real.',{project_id:'string',base_revision:'string',changes:'array'}],
+ ['discard_changes','Descarta una propuesta pendiente sin alterar el borrador.',{project_id:'string',patch_id:'string',expected_revision:'string'}],
+ ['apply_changes','Confirma una propuesta en el historial del BORRADOR fuente. No escribe en Git ni publica.',{project_id:'string',patch_id:'string',expected_revision:'string'}],
+ ['restore_revision','Crea una nueva revisión de borrador a partir de una anterior; conserva el historial.',{project_id:'string',revision_id:'string',expected_revision:'string'}],
+ ['list_feedback','Lee comentarios de revisión con cursor incremental.',{project_id:'string',cursor:'number?'}],
+ ['reply_feedback','Añade una respuesta a un comentario del borrador.',{project_id:'string',feedback_id:'string',text:'string',idempotency_key:'string'}],
+ ['get_web_taste','Devuelve las decisiones aprobadas, limitadas a este proyecto.',{project_id:'string'}],
+ ['propose_web_taste','Registra una propuesta pendiente; no cambia las decisiones aprobadas.',{project_id:'string',decisions:'array',evidence:'array',expected_revision:'string'}],
+ ['export_web_taste','Exporta solo la revisión aprobada como web-taste.md.',{project_id:'string',approved_revision:'string'}],
+ ['export_patch','Devuelve los archivos y diferencias del borrador para una integración humana separada.',{project_id:'string',revision_id:'string'}],
+];
+export const toolSchemas=tools.map(([name,description,shape])=>({name,description,inputSchema:{type:'object',additionalProperties:false,properties:Object.fromEntries(Object.entries(shape).map(([k,v])=>[k,{type:v.replace('?','')}])),required:Object.entries(shape).filter(([,v])=>!v.endsWith('?')).map(([k])=>k)},annotations:{readOnlyHint:!['propose_changes','discard_changes','apply_changes','restore_revision','reply_feedback','propose_web_taste'].includes(name),destructiveHint:false,openWorldHint:false}}));
+const boundedString=(v,max=2000)=>typeof v==='string'&&v.trim()&&v.length<=max;
+export function makeService({snapshot,manifest,provenance,store,project}){
+  const PROJECT_ID=project.id,taste=project.taste;
+  const sourceFingerprintPromise=crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({html:snapshot.html,css:snapshot.css,files:Object.entries(provenance.files||{}).sort(([a],[b])=>a.localeCompare(b))}))).then(bytes=>Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,'0')).join(''));
+  async function loadBound(owner){
+    const loaded=await store.read(PROJECT_ID,owner),fingerprint=await sourceFingerprintPromise;
+    if(loaded.state.sourceFingerprint===fingerprint)return loaded;
+    const s=loaded.state;
+    const pristine=!s.sourceFingerprint&&s.head==='r0'&&s.revisions?.length===1&&Object.keys(s.revisions[0].edits||{}).length===0&&!s.patches?.length&&!s.feedback?.length&&!s.tasteProposals?.length;
+    if(!pristine)fail('SOURCE_MISMATCH','El historial pertenece a otra fuente o no tiene huella verificable. Restaurá la fuente original o migrá el proyecto con revisión explícita.',409);
+    s.sourceFingerprint=fingerprint;await store.save(PROJECT_ID,owner,loaded.version,s);return {state:s,version:loaded.version+1};
+  }
+  const summary=(state)=>({project_id:PROJECT_ID,name:project.name,subtitle:project.subtitle,pageLabel:project.pageLabel,revisionLabel:project.revisionLabel,source_kind:'frozen-source-draft',source_commit:provenance.commit,head:state.head,page_id:'home',live_apply:false,capabilities:['text','typography','color','spacing','responsive-preview','revision-history','patch-export'],manifest,history:state.revisions.map(({edits,...r})=>r),edits:revision(state,state.head).edits,feedback:state.feedback,canUndo:!!state.undoStack?.length,canRedo:!!state.redoStack?.length,taste});
+  async function invoke(name,args,owner,origin){
+    const schema=toolSchemas.find(t=>t.name===name);
+    if(!schema&&!['project','add_feedback','undo','redo'].includes(name))fail('UNKNOWN_TOOL','Herramienta desconocida',404);
+    if(!args||typeof args!=='object'||Array.isArray(args))fail('INVALID_ARGUMENTS','Argumentos inválidos');
+    if(schema){for(const required of schema.inputSchema.required)if(!(required in args))fail('INVALID_ARGUMENTS',`Falta ${required}`);for(const key of Object.keys(args))if(!(key in schema.inputSchema.properties))fail('INVALID_ARGUMENTS',`Campo desconocido: ${key}`);}
+    if(name!=='list_projects'&&args.project_id!==PROJECT_ID)fail('UNKNOWN_PROJECT','Proyecto no accesible',404);
+    if(args.page_id&&args.page_id!=='home')fail('UNKNOWN_PAGE','Página desconocida',404);
+    const loaded=await loadBound(owner);const state=loaded.state;state.undoStack??=[];state.redoStack??=[];state.feedbackCursor=Number.isSafeInteger(state.feedbackCursor)?state.feedbackCursor:Math.max(0,...state.feedback.map(f=>Number.isSafeInteger(f.cursor)?f.cursor:0));let mutated=false,result;
+    switch(name){
+      case 'list_projects': result={projects:[{project_id:PROJECT_ID,name:project.name,subtitle:project.subtitle,pageLabel:project.pageLabel,revisionLabel:project.revisionLabel,source_kind:'frozen-source-draft',live_apply:false}]};break;
+      case 'project':result=summary(state);break;
+      case 'open_review': {const r=revision(state,args.revision_id||state.head);result={url:`${origin}/?revision=${r.id}`,revision_id:r.id,source_kind:'frozen-source-draft',live_apply:false};break;}
+      case 'inspect_page': {const r=revision(state,args.revision_id);result={revision_id:r.id,viewport:args.viewport||'desktop',elements:manifest.map(n=>({...n,text:r.edits[n.id]?.text??n.text,overrides:r.edits[n.id]?.styles||{}})),geometry:null,geometry_note:'La vista visual mide la geometría real; no se calcula en el servidor.'};break;}
+      case 'get_element': {const r=revision(state,args.revision_id),n=manifest.find(n=>n.id===args.element_id);if(!n)fail('UNKNOWN_ELEMENT','Elemento desconocido',404);result={...n,text:r.edits[n.id]?.text??n.text,overrides:r.edits[n.id]?.styles||{},revision_id:r.id};break;}
+      case 'propose_changes': {checkRevision(state,args.base_revision);if(state.patches.filter(p=>!p.appliedRevision).length>=100)fail('PATCH_LIMIT','Demasiadas propuestas pendientes',409);const base=revision(state,state.head),edits=mergeChanges(base.edits,args.changes,manifest),diff=diffSummary(manifest,base.edits,edits);if(!diff.length)fail('EMPTY_CHANGE','No hay cambios nuevos');const patch={id:crypto.randomUUID(),base:state.head,edits,diff,createdAt:new Date().toISOString()};state.patches.push(patch);mutated=true;result={patch_id:patch.id,base_revision:patch.base,diff,preview_revision:`patch:${patch.id}`,draft_only:true};break;}
+      case 'discard_changes': {const p=state.patches.find(p=>p.id===args.patch_id);if(!p) {result={discarded:true,idempotent:true};break;}if(p.appliedRevision)fail('PATCH_ALREADY_APPLIED','La propuesta ya está guardada',409);if(p.base!==args.expected_revision)fail('REVISION_CONFLICT','La propuesta pertenece a otra revisión',409);state.patches=state.patches.filter(p=>p.id!==args.patch_id);mutated=true;result={discarded:true};break;}
+      case 'apply_changes': {const patch=state.patches.find(p=>p.id===args.patch_id);if(!patch)fail('UNKNOWN_PATCH','Propuesta desconocida',404);if(patch.appliedRevision){if(args.expected_revision!==patch.base)fail('REVISION_CONFLICT','Reintento con revisión diferente',409);result={revision_id:patch.appliedRevision,draft_only:true,idempotent:true};break;}checkRevision(state,args.expected_revision);if(patch.base!==state.head)fail('REVISION_CONFLICT','La propuesta pertenece a una revisión anterior',409);state.undoStack.push(state.head);state.redoStack=[];const r=commitRevision(state,patch.edits,`Edición visual · ${patch.diff.length} cambios`);patch.appliedRevision=r.id;mutated=true;result={revision_id:r.id,draft_only:true,deployed:false};break;}
+      case 'restore_revision': {checkRevision(state,args.expected_revision);state.undoStack.push(state.head);state.redoStack=[];const old=revision(state,args.revision_id),r=commitRevision(state,old.edits,`Restaurar ${old.id}`);mutated=true;result={revision_id:r.id,restored_from:old.id,draft_only:true};break;}
+      case 'undo': case 'redo': {checkRevision(state,args.expected_revision);const from=name==='undo'?state.undoStack:state.redoStack,to=name==='undo'?state.redoStack:state.undoStack;if(!from.length)fail('HISTORY_EMPTY','No hay revisión disponible',409);const target=revision(state,from.pop());to.push(state.head);const r=commitRevision(state,target.edits,name==='undo'?'Deshacer':'Rehacer');mutated=true;result={revision_id:r.id,draft_only:true};break;}
+      case 'list_feedback': {const cursor=args.cursor??0;if(!Number.isSafeInteger(cursor)||cursor<0)fail('INVALID_CURSOR','Cursor inválido');result={items:state.feedback.filter(f=>f.cursor>cursor).sort((a,b)=>a.cursor-b.cursor),cursor:state.feedbackCursor||0};break;}
+      case 'add_feedback': {checkRevision(state,args.expected_revision);if(!boundedString(args.text)||!manifest.some(n=>n.id===args.element_id))fail('INVALID_FEEDBACK','Comentario inválido');if(state.feedback.length>=200)fail('FEEDBACK_LIMIT','Límite de comentarios alcanzado');const item={id:crypto.randomUUID(),cursor:++state.feedbackCursor,revision_id:state.head,element_id:args.element_id,text:args.text,replies:[],createdAt:new Date().toISOString()};state.feedback.push(item);mutated=true;result=item;break;}
+      case 'reply_feedback': {if(!boundedString(args.text)||!boundedString(args.idempotency_key,100))fail('INVALID_FEEDBACK','Respuesta inválida');const f=state.feedback.find(f=>f.id===args.feedback_id);if(!f)fail('UNKNOWN_FEEDBACK','Comentario desconocido',404);const existing=f.replies.find(r=>r.key===args.idempotency_key);if(existing){if(existing.text!==args.text)fail('IDEMPOTENCY_CONFLICT','La clave ya se usó con otro texto',409);result={accepted:true,id:existing.id};break;}if(f.replies.length>=50)fail('FEEDBACK_LIMIT','Límite de respuestas');const reply={id:crypto.randomUUID(),key:args.idempotency_key,text:args.text,createdAt:new Date().toISOString()};f.replies.push(reply);f.cursor=++state.feedbackCursor;mutated=true;result={accepted:true,id:reply.id};break;}
+      case 'get_web_taste':result=taste;break;
+      case 'propose_web_taste': {checkRevision(state,args.expected_revision);if(!Array.isArray(args.decisions)||!args.decisions.length||args.decisions.length>10||!args.decisions.every(x=>boundedString(x,1000))||!Array.isArray(args.evidence)||args.evidence.length>10||!args.evidence.every(x=>boundedString(x,2000)))fail('INVALID_TASTE','Propuesta de gusto inválida');if(state.tasteProposals.length>=50)fail('TASTE_LIMIT','Límite de propuestas');const p={id:crypto.randomUUID(),decisions:args.decisions,evidence:args.evidence,status:'pending-human-approval',createdAt:new Date().toISOString()};state.tasteProposals.push(p);mutated=true;result=p;break;}
+      case 'export_web_taste':if(args.approved_revision!==taste.revision)fail('UNKNOWN_TASTE','Revisión de gusto no aprobada',409);result={filename:'web-taste.md',content:tasteMarkdown(taste)};break;
+      case 'export_patch': {const r=revision(state,args.revision_id);result={project_id:PROJECT_ID,base_commit:provenance.commit,source_fingerprint:state.sourceFingerprint,revision_id:r.id,source_kind:'frozen-source-draft',requires_human_review:true,deployed:false,files:materialize(snapshot,manifest,r.edits),changes:diffSummary(manifest,{},r.edits),instruction:'Revisar contra el commit base, aplicar al repositorio correcto y verificar pruebas con autorización independiente. No contiene lógica de agenda ni permisos de publicación.'};break;}
+    }
+    if(mutated)await store.save(PROJECT_ID,owner,loaded.version,state);
+    return result;
+  }
+  return {invoke,async getRevision(owner,id){const {state}=await loadBound(owner);if(id?.startsWith('patch:')){const p=state.patches.find(p=>'patch:'+p.id===id);if(!p)fail('UNKNOWN_PATCH','Propuesta desconocida',404);return {id,edits:p.edits};}return revision(state,id||state.head);}};
+}

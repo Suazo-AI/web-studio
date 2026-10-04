@@ -1,0 +1,9 @@
+{
+  "sourceKind": "frozen-source-draft",
+  "repository": null,
+  "commit": "synthetic-demo-v1",
+  "files": {
+    "src/index.html": "db8d80a37df646d71b068182c7676a92d98ec04b24315002a545b21fdd911652",
+    "src/styles.css": "05f51da138526e32fa7585981415d5ff330e93fc1daaf602e107bf51d99df6cc"
+  }
+}

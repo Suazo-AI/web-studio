@@ -1,0 +1,11 @@
+# Visual editor boundaries
+- This is a generic private-first editor core. No action may modify or publish connected live source.
+- All real project source, media, taste, provenance, comments and revisions belong outside the public core, in an explicitly private project directory.
+- `.private-projects/`, `.local/`, `dist/`, `test-results/` are never publication inputs. Ignore rules alone are not a privacy review.
+- Public tests/builds must use only the synthetic `examples/studio-demo` fixture. Never include real project screenshots or generated bundles in CI logs/artifacts.
+- Edits create source-backed DRAFT revisions only. Export requires human review and separately authorized integration before live changes.
+- Never run/install the upstream Lavish CLI, accept arbitrary runtime source URLs, filesystem paths, shell commands, scripts or CSS.
+- Production authorization requires private Sites audience, trusted identity and an explicitly configured owner. Never auto-claim ownership.
+- Keep preview sandbox opaque; whitelist source operations and message scope. Strip source scripts, events, forms, navigation and active embeds from preview.
+- All writes use expected revision and atomic compare-and-swap. Test authorization, conflicts, source roundtrip and undo.
+- Preserve third-party notices. Upstream reference material was inspected, not executed. Core is MIT; private project data remains excluded. Public publication requires privacy review.

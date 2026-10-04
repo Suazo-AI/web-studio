@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.local/
+test-results/
+playwright-report/
+.sites-runtime/
+.private-projects/
+web-taste.md
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

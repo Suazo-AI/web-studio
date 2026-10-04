@@ -1,0 +1,18 @@
+import { cp, mkdir, readFile, readdir, stat, lstat, writeFile } from 'node:fs/promises';
+import { resolve, relative, dirname } from 'node:path';
+import { createHash } from 'node:crypto';
+const root=process.cwd();
+const destination=resolve(process.env.CORE_EXPORT_DIR||'../atelier-public-core-candidate');
+if(destination===root||destination.startsWith(root+'/'))throw new Error('Export must be a new sibling/outside directory');
+try{await stat(destination);throw new Error('Destination already exists; choose a new path for an independently reviewable clean export');}catch(error){if(error.code!=='ENOENT')throw error;}
+const allowed=['LICENSE','AGENTS.md','README.md','SPEC.md','.gitignore','package.json','package-lock.json','playwright.config.mjs','drizzle.config.ts','.openai/hosting.json','.github','src','ui','tests','db','drizzle','examples','scripts','docs'];
+async function files(directory){const entries=await readdir(directory,{recursive:true,withFileTypes:true});if(entries.some(x=>x.isSymbolicLink()||(!x.isFile()&&!x.isDirectory())))throw new Error('Symlinks/non-regular files are not allowed in publication inputs');return entries.filter(x=>x.isFile()).map(x=>resolve(x.parentPath,x.name));}
+const privateRoot=resolve('.private-projects');
+let privateFiles=[];try{privateFiles=await files(privateRoot);}catch(error){if(error.code!=='ENOENT')throw error;}
+const privateHashes=new Set(),privateTokens=new Set();
+for(const file of privateFiles){const bytes=await readFile(file);if(bytes.length>100)privateHashes.add(createHash('sha256').update(bytes).digest('hex'));if(file.endsWith('/project.json')){const p=JSON.parse(bytes);for(const value of [p.id,p.name,p.subtitle,p.pageLabel,p.revisionLabel,p.taste?.scope,...(p.taste?.decisions||[]).flatMap(d=>[d.rule,d.evidence])])if(typeof value==='string'&&value.length>=6)privateTokens.add(value);}if(file.endsWith('/manifest.json')){const p=JSON.parse(bytes);if(p.commit?.length>10)privateTokens.add(p.commit);if(p.repository)privateTokens.add(p.repository);}}
+const manifest=[];
+for(const entry of allowed){const absolute=resolve(entry),s=await lstat(absolute);if(s.isSymbolicLink())throw new Error('Symlink publication input');for(const file of s.isDirectory()?await files(absolute):[absolute]){const rel=relative(root,file);if(rel.includes('.git/')||rel.includes('.private-projects/'))throw new Error('Forbidden publication path');const bytes=await readFile(file),hash=createHash('sha256').update(bytes).digest('hex');if(privateHashes.has(hash))throw new Error(`Private file bytes detected: ${rel}`);const text=bytes.toString('utf8');for(const token of privateTokens)if(text.includes(token))throw new Error(`Private project marker detected: ${rel}`);if(/\.(png|jpe?g|webp|woff2?|ttf|sqlite)$/i.test(rel))throw new Error(`Binary asset/runtime file not allowed in generic export: ${rel}`);manifest.push({path:rel,sha256:hash});}}
+const hosting=JSON.parse(await readFile('.openai/hosting.json','utf8'));if(hosting.project_id)throw new Error('Site identity must not enter public core export');
+await mkdir(destination,{recursive:false});for(const entry of manifest){await mkdir(dirname(resolve(destination,entry.path)),{recursive:true});await cp(resolve(root,entry.path),resolve(destination,entry.path),{force:false});}await writeFile(resolve(destination,'PUBLIC-CORE-MANIFEST.json'),JSON.stringify({purpose:'Clean generic core candidate for human privacy/license review; not publication authorization',files:manifest},null,2)+'\n');
+console.log(`Prepared ${manifest.length} allowlisted files in ${destination}. No private data, Git history, build artifacts or public publication included.`);
