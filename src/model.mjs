@@ -1,4 +1,6 @@
 import { parse, serialize } from 'parse5';
+export const FONT_FAMILIES=['Anton','Barlow','Barlow Condensed','Arial','Georgia'];
+export function availableFonts(css){const declared=[...css.matchAll(/@font-face\s*\{([^}]+)\}/g)].map(m=>m[1].match(/font-family\s*:\s*([^;]+);/)?.[1]?.trim().replaceAll("'",'').replaceAll('"','')).filter(x=>FONT_FAMILIES.includes(x));return [...new Set([...declared,'Arial','Georgia'])];}
 export const PROPERTIES = ['font-family','font-size','font-weight','line-height','letter-spacing','color','background-color','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-right','margin-bottom','margin-left','gap','border-radius'];
 export class EditorError extends Error { constructor(code, message, status=400){ super(message); this.code=code; this.status=status; } }
 export function fail(code,message,status=400){ throw new EditorError(code,message,status); }
@@ -33,7 +35,7 @@ export function makeManifest(html) {
   });
   return nodes;
 }
-export function validateChange(change,manifest) {
+export function validateChange(change,manifest,fontChoices=FONT_FAMILIES) {
   if(!change||typeof change!=='object'||Array.isArray(change))fail('INVALID_CHANGE','Cambio inválido');
   const keys=Object.keys(change); if(keys.some(k=>!['element_id','text','styles'].includes(k)))fail('INVALID_CHANGE','Campo de cambio no permitido');
   const node=manifest.find(x=>x.id===change.element_id); if(!node)fail('UNKNOWN_ELEMENT','Elemento desconocido');
@@ -45,7 +47,7 @@ export function validateChange(change,manifest) {
     for(const [key,value] of Object.entries(change.styles)) {
       if(!PROPERTIES.includes(key)||typeof value!=='string')fail('INVALID_STYLE','Propiedad no permitida');
       let valid=false;
-      if(key==='font-family')valid=['Anton','Barlow','Barlow Condensed','Arial','Georgia'].includes(value);
+      if(key==='font-family')valid=fontChoices.includes(value);
       else if(key==='font-weight')valid=/^(400|500|600|700|800|900)$/.test(value);
       else if(key.includes('color'))valid=/^#[0-9a-fA-F]{6}$/.test(value);
       else if(key==='line-height')valid=/^(?:1(?:\.\d{1,2})?|2(?:\.0{1,2})?)$/.test(value);
@@ -57,10 +59,10 @@ export function validateChange(change,manifest) {
   if(!('text' in out)&&!Object.keys(out.styles||{}).length)fail('EMPTY_CHANGE','El cambio está vacío');
   return out;
 }
-export function mergeChanges(edits,changes,manifest){
+export function mergeChanges(edits,changes,manifest,fontChoices=FONT_FAMILIES){
   if(!Array.isArray(changes)||!changes.length||changes.length>30)fail('INVALID_CHANGES','Se admiten de 1 a 30 cambios');
   const next=clone(edits);
-  for(const c of changes.map(x=>validateChange(x,manifest))){next[c.element_id]??={};if('text'in c)next[c.element_id].text=c.text;if(c.styles)next[c.element_id].styles={...(next[c.element_id].styles||{}),...c.styles};}
+  for(const c of changes.map(x=>validateChange(x,manifest,fontChoices))){next[c.element_id]??={};if('text'in c)next[c.element_id].text=c.text;if(c.styles)next[c.element_id].styles={...(next[c.element_id].styles||{}),...c.styles};}
   return next;
 }
 export function materialize(snapshot,manifest,edits) {
