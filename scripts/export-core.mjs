@@ -5,7 +5,7 @@ const root=process.cwd();
 const destination=resolve(process.env.CORE_EXPORT_DIR||'../atelier-public-core-candidate');
 if(destination===root||destination.startsWith(root+'/'))throw new Error('Export must be a new sibling/outside directory');
 try{await stat(destination);throw new Error('Destination already exists; choose a new path for an independently reviewable clean export');}catch(error){if(error.code!=='ENOENT')throw error;}
-const allowed=['LICENSE','AGENTS.md','README.md','SPEC.md','.gitignore','package.json','package-lock.json','playwright.config.mjs','drizzle.config.ts','.openai/hosting.json','.github','src','ui','tests','db','drizzle','examples','scripts','docs'];
+const allowed=['LICENSE','AGENTS.md','README.md','SPEC.md','SPEC-V2.md','.gitignore','package.json','package-lock.json','playwright.config.mjs','drizzle.config.ts','.openai/hosting.json','.github','src','ui','tests','db','drizzle','examples','scripts','docs'];
 async function files(directory){const entries=await readdir(directory,{recursive:true,withFileTypes:true});if(entries.some(x=>x.isSymbolicLink()||(!x.isFile()&&!x.isDirectory())))throw new Error('Symlinks/non-regular files are not allowed in publication inputs');return entries.filter(x=>x.isFile()).map(x=>resolve(x.parentPath,x.name));}
 const privateRoot=resolve('.private-projects');
 let privateFiles=[];try{privateFiles=await files(privateRoot);}catch(error){if(error.code!=='ENOENT')throw error;}

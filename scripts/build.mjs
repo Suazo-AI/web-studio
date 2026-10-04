@@ -18,6 +18,8 @@ for(const [path,hash] of Object.entries(provenance.files)){
 const snapshot={html:await readFile(`${root}/snapshot/src/index.html`,'utf8'),css:await readFile(`${root}/snapshot/src/styles.css`,'utf8')};
 const manifest=makeManifest(snapshot.html);
 const ui={};for(const path of await readdir('ui')){if(!/\.(html|css|js)$/.test(path))throw new Error('Unexpected UI file');ui['/'+path]={content:await readFile('ui/'+path,'utf8'),type:{html:'text/html; charset=utf-8',css:'text/css; charset=utf-8',js:'application/javascript; charset=utf-8'}[path.split('.').at(-1)]};}
+const v2Runtime=await build({stdin:{contents:`export {applyOperations} from './src/v2-model.mjs';export {v2Preview} from './src/v2-preview.mjs';`,resolveDir:process.cwd(),sourcefile:'v2-runtime-entry.mjs'},bundle:true,format:'esm',platform:'browser',target:'es2022',write:false,minify:true});
+ui['/v2-runtime.js']={content:v2Runtime.outputFiles[0].text,type:'application/javascript; charset=utf-8'};
 const bundle={project,snapshot,manifest,provenance,assets,ui};
 await mkdir('.local',{recursive:true});await writeFile('.local/bundle.json',JSON.stringify(bundle));
 const result=await build({stdin:{contents:`import { createWorker } from './src/worker.mjs'; export default createWorker(${JSON.stringify(bundle)});`,resolveDir:process.cwd(),sourcefile:'worker-entry.mjs'},bundle:true,format:'esm',platform:'browser',target:'es2022',write:false,minify:true});
