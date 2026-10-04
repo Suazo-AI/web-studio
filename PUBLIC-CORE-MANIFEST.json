@@ -47,7 +47,7 @@
     },
     {
       "path": "src/canvas-bridge.mjs",
-      "sha256": "a65ff0b3cc9548c2636fcec8903011fc27349740569f77ed1de08d547482b174"
+      "sha256": "493da52772bbe63b91da00758f288187579a65c467d1d62d89b411263c3e8d8a"
     },
     {
       "path": "src/model.mjs",
@@ -95,7 +95,7 @@
     },
     {
       "path": "tests/review-direct.test.mjs",
-      "sha256": "c48bcb622b774ac75d395c1cc5aa55fc0344361f5f882062df38d617f29c7043"
+      "sha256": "286f4a7b0e218e0793e1f3194c88de4af43c2d6e7f5c88e674ac2b81d3c155f9"
     },
     {
       "path": "tests/ui.test.mjs",

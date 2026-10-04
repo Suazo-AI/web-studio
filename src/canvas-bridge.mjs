@@ -83,7 +83,7 @@ export function canvasBridge(scope, properties, textIds) {
     if((e.ctrlKey||e.metaKey)&&['z','y','s'].includes(e.key.toLowerCase())){send('ve:shortcut',{command:e.key.toLowerCase()==='s'?'save':e.key.toLowerCase()==='y'||e.shiftKey?'redo':'undo'});e.preventDefault();return;}
     if(!enabled||!chosen)return;
     if(e.key==='Enter'&&!overlay.contains(e.target)){startText();e.preventDefault();}
-    if(e.target.matches('[data-handle]')&&e.key.startsWith('Arrow')){const start=limits(node(chosen)),step=e.shiftKey?10:1;change(moved(start,e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0));e.preventDefault();}
+    if(e.target.matches('[data-handle]')&&e.key.startsWith('Arrow')){const start=limits(node(chosen)),step=e.shiftKey?10:1;if(e.target.dataset.handle==='resize')change({'font-size':px(clamp(start.font+(['ArrowLeft','ArrowUp'].includes(e.key)?-step:step),8,220))});else change(moved(start,e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0));e.preventDefault();}
   });
   document.addEventListener('submit',e=>e.preventDefault(),true);
   addEventListener('blur',cancelGesture);addEventListener('scroll',refresh,true);addEventListener('resize',refresh);new ResizeObserver(refresh).observe(document.body);
