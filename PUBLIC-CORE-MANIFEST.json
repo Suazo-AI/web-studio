@@ -119,7 +119,7 @@
     },
     {
       "path": "ui/v2.js",
-      "sha256": "a50d18f674d7277c8ad66aae4d8f6048da096d1c8194df517910141bba2ecd40"
+      "sha256": "452d5f42139683323562efd1a05a9c28ef010b8d3ec1846edc84417ada025045"
     },
     {
       "path": "tests/editor.spec.mjs",
@@ -139,7 +139,7 @@
     },
     {
       "path": "tests/v2-editor.spec.mjs",
-      "sha256": "d27983a2958b0c15a209254301a6fe3fabc92a5a0f0f9484cb75b7ce61115d0e"
+      "sha256": "d9e9c21ff694f588ad0afd3263198819a16ac3409d2bd85059b14caf3b777fe3"
     },
     {
       "path": "tests/v2-model.test.mjs",
@@ -147,7 +147,7 @@
     },
     {
       "path": "tests/v2-review.test.mjs",
-      "sha256": "f2592b109e3f4c4a95c122717e7b1365504218aca3b16a819a257b61e9a81b1a"
+      "sha256": "2d5360dd10394ea9e2f945402e41c4c4545a3e6536d913e4fededdbede5e32ac"
     },
     {
       "path": "tests/v2-service.test.mjs",

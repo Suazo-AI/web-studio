@@ -104,3 +104,16 @@ test('V2 review: source-position inspector and keyboard nudge require explicit l
   ui.d.body.dispatchEvent(new ui.w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));assert.equal(ui.w.review.pending.length,2);assert.equal(ui.w.review.doc.nodes.find(n=>n.id===id).responsiveLayout.desktop.y,21);
  }finally{ui.dom.window.close();}
 });
+test('V2 review: late preview measurements cannot erase focused free-position inputs',async()=>{
+ const ui=await openUI();try{ui.select('A');const id=ui.w.review.selected,layout=ui.d.querySelector('#layout'),x=ui.d.querySelector('#x'),y=ui.d.querySelector('#y');
+  layout.value='free';layout.dispatchEvent(new ui.w.Event('change',{bubbles:true}));
+  x.focus();x.value='-20';x.dispatchEvent(new ui.w.Event('input',{bubbles:true}));
+  ui.message({type:'v2:select',id,computed:{position:'absolute',left:'0px',top:'0px',fontFamily:'Arial',fontSize:'18px',color:'rgb(1, 2, 3)'}});
+  assert.equal(x.value,'-20','The delayed preview response must retain the uncommitted X value');
+  x.dispatchEvent(new ui.w.Event('change',{bubbles:true}));y.focus();y.value='35';y.dispatchEvent(new ui.w.Event('input',{bubbles:true}));
+  ui.message({type:'v2:select',id,computed:{position:'absolute',left:'-20px',top:'0px',fontFamily:'Arial',fontSize:'18px',color:'rgb(1, 2, 3)'}});
+  assert.equal(y.value,'35','The delayed preview response must retain the uncommitted Y value');
+  y.dispatchEvent(new ui.w.Event('change',{bubbles:true}));y.blur();
+  const saved=ui.w.review.doc.nodes.find(n=>n.id===id).responsiveLayout.desktop;assert.equal(saved.x,-20);assert.equal(saved.y,35);assert.equal(ui.w.review.pending.length,3);
+ }finally{ui.dom.window.close();}
+});
