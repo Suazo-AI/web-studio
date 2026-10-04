@@ -1,6 +1,8 @@
 import { parse, serialize } from 'parse5';
 export const FONT_FAMILIES=['Anton','Barlow','Barlow Condensed','Arial','Georgia'];
 export function availableFonts(css){const declared=[...css.matchAll(/@font-face\s*\{([^}]+)\}/g)].map(m=>m[1].match(/font-family\s*:\s*([^;]+);/)?.[1]?.trim().replaceAll("'",'').replaceAll('"','')).filter(x=>FONT_FAMILIES.includes(x));return [...new Set([...declared,'Arial','Georgia'])];}
+export const VIEWPORTS = ['desktop','tablet','mobile'];
+export const VIEWPORT_MEDIA = {desktop:'(min-width: 1024px)',tablet:'(min-width: 768px) and (max-width: 1023px)',mobile:'(max-width: 767px)'};
 export const PROPERTIES = ['font-family','font-size','font-weight','line-height','letter-spacing','color','background-color','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-right','margin-bottom','margin-left','gap','border-radius'];
 export class EditorError extends Error { constructor(code, message, status=400){ super(message); this.code=code; this.status=status; } }
 export function fail(code,message,status=400){ throw new EditorError(code,message,status); }
@@ -37,9 +39,10 @@ export function makeManifest(html) {
 }
 export function validateChange(change,manifest,fontChoices=FONT_FAMILIES) {
   if(!change||typeof change!=='object'||Array.isArray(change))fail('INVALID_CHANGE','Cambio inválido');
-  const keys=Object.keys(change); if(keys.some(k=>!['element_id','text','styles'].includes(k)))fail('INVALID_CHANGE','Campo de cambio no permitido');
+  const keys=Object.keys(change); if(keys.some(k=>!['element_id','text','styles','viewport'].includes(k)))fail('INVALID_CHANGE','Campo de cambio no permitido');
   const node=manifest.find(x=>x.id===change.element_id); if(!node)fail('UNKNOWN_ELEMENT','Elemento desconocido');
   const out={element_id:node.id};
+  if('viewport' in change){if(!VIEWPORTS.includes(change.viewport))fail('INVALID_VIEWPORT','Vista no permitida');out.viewport=change.viewport;}
   if('text' in change){ if(!node.editable.text||typeof change.text!=='string'||change.text.length<1||change.text.length>500||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(change.text))fail('INVALID_TEXT','Texto no editable o fuera del límite');out.text=change.text; }
   if('styles' in change){
     if(!change.styles||typeof change.styles!=='object'||Array.isArray(change.styles))fail('INVALID_STYLE','Estilos inválidos');
@@ -62,24 +65,43 @@ export function validateChange(change,manifest,fontChoices=FONT_FAMILIES) {
 export function mergeChanges(edits,changes,manifest,fontChoices=FONT_FAMILIES){
   if(!Array.isArray(changes)||!changes.length||changes.length>30)fail('INVALID_CHANGES','Se admiten de 1 a 30 cambios');
   const next=clone(edits);
-  for(const c of changes.map(x=>validateChange(x,manifest,fontChoices))){next[c.element_id]??={};if('text'in c)next[c.element_id].text=c.text;if(c.styles)next[c.element_id].styles={...(next[c.element_id].styles||{}),...c.styles};}
+  for(const c of changes.map(x=>validateChange(x,manifest,fontChoices))){next[c.element_id]??={};if('text'in c)next[c.element_id].text=c.text;if(c.styles){if(c.viewport){next[c.element_id].responsive??={};next[c.element_id].responsive[c.viewport]={...(next[c.element_id].responsive[c.viewport]||{}),...c.styles};}else next[c.element_id].styles={...(next[c.element_id].styles||{}),...c.styles};}}
   return next;
 }
 export function materialize(snapshot,manifest,edits) {
   let html=snapshot.html;
-  const replacements=[]; let overrides='';
+  const replacements=[]; let overrides='';const responsive=Object.fromEntries(VIEWPORTS.map(v=>[v,'']));
+  const rule=(selector,styles)=>`${selector} {\n${Object.entries(styles).map(([k,v])=>`  ${k}: ${k==='font-family'?`"${v}"`:v};`).join('\n')}\n}\n`;
   for(const [id,edit] of Object.entries(edits)) {
     const n=manifest.find(x=>x.id===id); if(!n)fail('UNKNOWN_ELEMENT','Revisión con elemento desconocido');
     if('text'in edit)replacements.push({start:n.source.start,end:n.source.end,text:escapeText(edit.text)});
-    if(Object.keys(edit.styles||{}).length)overrides+=`${n.selector} {\n${Object.entries(edit.styles).map(([k,v])=>`  ${k}: ${k==='font-family'?`"${v}"`:v};`).join('\n')}\n}\n`;
+    if(Object.keys(edit.styles||{}).length)overrides+=rule(n.selector,edit.styles);
+    for(const viewport of VIEWPORTS)if(Object.keys(edit.responsive?.[viewport]||{}).length)responsive[viewport]+=rule(n.selector,edit.responsive[viewport]);
   }
+  for(const viewport of VIEWPORTS)if(responsive[viewport])overrides+=`@media ${VIEWPORT_MEDIA[viewport]} {\n${responsive[viewport]}}\n`;
   for(const r of replacements.sort((a,b)=>b.start-a.start))html=html.slice(0,r.start)+r.text+html.slice(r.end);
   return {'src/index.html':html,'src/styles.css':snapshot.css+(overrides?'\n/* Visual editor draft overrides. Review before integration. */\n'+overrides:'')};
 }
 export function diffSummary(manifest,before,after){
-  const diff=[];for(const node of manifest){const a=before[node.id]||{},b=after[node.id]||{};if(('text'in a||'text'in b)&&(a.text??node.text)!==(b.text??node.text))diff.push({element_id:node.id,label:node.label,file:'src/index.html',line:node.source.line,property:'text',before:a.text??node.text,after:b.text??node.text});for(const k of PROPERTIES)if(a.styles?.[k]!==b.styles?.[k])diff.push({element_id:node.id,label:node.label,file:'src/styles.css',property:k,before:a.styles?.[k]??'(fuente original)',after:b.styles?.[k]??'(fuente original)'});}return diff;
+  const diff=[];
+  for(const node of manifest){
+    const a=before[node.id]||{},b=after[node.id]||{};
+    if(('text'in a||'text'in b)&&(a.text??node.text)!==(b.text??node.text))diff.push({element_id:node.id,label:node.label,file:'src/index.html',line:node.source.line,property:'text',viewport:'global',before:a.text??node.text,after:b.text??node.text});
+    for(const viewport of ['global',...VIEWPORTS]){
+      const left=viewport==='global'?a.styles:a.responsive?.[viewport],right=viewport==='global'?b.styles:b.responsive?.[viewport];
+      for(const k of PROPERTIES)if(left?.[k]!==right?.[k])diff.push({element_id:node.id,label:node.label,file:'src/styles.css',property:k,viewport,before:left?.[k]??'(fuente original)',after:right?.[k]??'(fuente original)',before_override:left?.[k]??null,after_override:right?.[k]??null});
+    }
+  }
+  return diff;
+}
+export async function sourceHashes(files){
+  const digest=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),x=>x.toString(16).padStart(2,'0')).join('');
+  // The aggregate is versioned and deterministic; individual hashes cover the exact UTF-8 file bytes.
+  const canonical=Object.fromEntries(Object.entries(files).sort(([a],[b])=>a.localeCompare(b)));
+  const file_hashes=Object.fromEntries(await Promise.all(Object.entries(canonical).map(async([path,content])=>[path,await digest(content)])));
+  return {revision_hash:await digest(JSON.stringify(canonical)),file_hashes,hash_algorithm:'SHA-256',hash_format:'json-files-v1'};
 }
 export function initialState(){return {head:'r0',revisions:[{id:'r0',parent:null,createdAt:new Date().toISOString(),label:'Fuente congelada',edits:{}}],patches:[],feedback:[],feedbackCursor:0,tasteProposals:[],undoStack:[],redoStack:[]};}
 export function revision(state,id){const r=state.revisions.find(x=>x.id===id);if(!r)fail('UNKNOWN_REVISION','Revisión desconocida',404);return r;}
 export function checkRevision(state,id){if(state.head!==id)fail('REVISION_CONFLICT',`La revisión actual es ${state.head}. Recargá antes de guardar.`,409);}
-export function commitRevision(state,edits,label){if(state.revisions.length>=100)fail('REVISION_LIMIT','Límite de 100 revisiones: exportá y revisá este proyecto antes de continuar',409);const next={id:`r${state.revisions.length}`,parent:state.head,createdAt:new Date().toISOString(),label,edits:clone(edits)};state.revisions.push(next);state.head=next.id;return next;}
+export function commitRevision(state,edits,label,metadata={}){if(state.revisions.length>=100)fail('REVISION_LIMIT','Límite de 100 revisiones: exportá y revisá este proyecto antes de continuar',409);const next={...clone(metadata),id:`r${state.revisions.length}`,parent:state.head,createdAt:new Date().toISOString(),label,edits:clone(edits)};state.revisions.push(next);state.head=next.id;return next;}
