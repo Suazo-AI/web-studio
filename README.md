@@ -69,3 +69,25 @@ Select text, then double-click or choose Texto to edit. Drag the text or the mov
 Style edits apply only to the selected preview width (desktop ≥1024px, tablet 768–1023px, mobile ≤767px). Text applies to every width. Movements are bounded positive margins, not free-positioned layers; resize changes typography, not the box. Existing project CSS still controls layout. Review every target width before separately integrating a draft into a live website.
 
 Save is a UI-only atomic action; it is not an MCP tool. The agent can read the saved diff, revision hash and exact exported source, but receiving a change creates no deployment or mutation side effect. The old proposal/review API remains available as an explicit separate workflow. Stale saves retain local work and offer a download before reload.
+
+## Isolated Editor V2 milestone
+
+Open `/v2` in the local synthetic demo. V1 `/` and its saved state are unchanged.
+V2 stores an independent, versioned source-backed layer document under a separate
+project namespace. Delete/Backspace removes a selected subtree; empty text is an
+explicit value. Undo/Redo, safe in-editor layer clipboard, reparenting, flow order,
+and viewport-scoped free positioning are supported. Changes autosave as immutable
+draft revisions; exporting does not deploy. Native text shortcuts keep their normal
+meaning in input fields. The clipboard fallback works within the open editor even
+when browser clipboard access is unavailable.
+
+An explicit V1 revision copy is available only in an empty V2 draft. The source
+fingerprint must match; the old project and revisions are never rewritten. See
+`SPEC-V2.md` for acceptance criteria and limits. Private production migration is a
+separate reviewed action. Font catalog/studio, image providers and custom-domain
+setup are separate modules and are not activated by this milestone.
+
+Arrow keys reorder selected flow siblings; in an explicitly free-positioned layer,
+they nudge 1px (Shift: 10px). Existing absolute/fixed source CSS requires an explicit
+layout choice before direct movement, avoiding an implicit change of containing
+block. The inspector shows measured source typography until an override is chosen.
